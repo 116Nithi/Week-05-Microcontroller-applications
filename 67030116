@@ -1,1 +1,267 @@
+ผลการทดลองที่ 1  
 
+ผลลัพธ์การรัน
+
+=== ESP32 STARTING UP ===
+ESP32 Memory Architecture Analysis
+==================================
+Flash string: Hello from Flash Memory!
+SRAM buffer: SRAM Test Data
+
+=== ESP32 Memory Layout Analysis ===
+Stack variable address: 0x3ffb4550
+SRAM buffer address:    0x3ffb16ac
+Flash string address:   0x3f407d24
+Heap allocation:        0x3ffb526c
+
+=== Heap Information ===
+Free heap size:         303088 bytes
+Min free heap size:     303088 bytes
+Largest free block:     172032 bytes
+
+=== Memory Usage by Type ===
+Internal SRAM:          380136 bytes
+SPI RAM (if available): 0 bytes
+DMA capable memory:     303088 bytes
+
+Memory analysis complete!
+
+
+Table 2.1: Memory Address Analysis
+| Memory Section | Variable/Function | Address (ที่แสดงออกมา) | Memory Type |
+| -------------- | ----------------- | ---------------------- | ----------- |
+| Stack          | stack\_var        | 0x3ffb4550             | SRAM        |
+| Global SRAM    | sram\_buffer      | 0x3ffb16ac             | SRAM        |
+| Flash          | flash\_string     | 0x3f407d24             | Flash       |
+| Heap           | heap\_ptr         | 0x3ffb526c             | SRAM        |
+
+Table 2.2: Memory Usage Summary
+| Memory Type   | Free Size (bytes) | Total Size (bytes) |
+| ------------- | ----------------- | ------------------ |
+| Internal SRAM | 303,088           | 520,192            |
+| Flash Memory  | varies            | varies             |
+| DMA Memory    | 303,088           | varies             |
+
+ผลการทดลองที่ 2
+
+ผลลัพธ์การรัน
+
+ESP32 Cache Performance Analysis
+================================
+Array size: 4096 elements (16 KB)
+Iterations per test: 100
+Test runs: 5
+
+Initializing test arrays...
+PSRAM not available, using internal memory
+
+=== Test 1: Sequential vs Random Access (Internal SRAM) ===
+SRAM Sequential Access: 11474 μs (sum=3609780224)
+SRAM Random Access: 11706 μs (sum=3609780224)
+SRAM Performance Ratio (Random/Sequential): 1.02x
+
+=== Test 2: External Memory Access ===
+External Sequential Access: 36082 μs (sum=3609780224)
+External Random Access: 36410 μs (sum=3609780224)
+External Memory Performance Ratio: 1.01x
+
+Memory Type Comparison (Sequential Access):
+External/Internal Speed Ratio: 3.14x
+
+=== Test 3: Stride Access Patterns ===
+Stride 1 (stride 1): 10628 μs (sum=3609780224)
+Stride 2 (stride 2): 7092 μs (sum=1801306112)
+Stride 4 (stride 4): 2727 μs (sum=3044552704)
+Stride 8 (stride 8): 1417 μs (sum=3666176000)
+Stride 16 (stride 16): 804 μs (sum=1829504000)
+
+Stride Analysis:
+Stride 2/1 ratio: 0.67x
+Stride 4/1 ratio: 0.26x
+Stride 8/1 ratio: 0.13x
+Stride 16/1 ratio: 0.08x
+
+Cache performance analysis complete!
+
+
+Table 3.1: Cache Performance Results
+| Test Type  | Memory Type     | Time (μs) | Ratio vs Sequential |
+| ---------- | --------------- | --------- | ------------------- |
+| Sequential | Internal SRAM   | 11474     | 1.00x               |
+| Random     | Internal SRAM   | 11706     | 1.02x               |
+| Sequential | External Memory | 36082     | 3.14x               |
+| Random     | External Memory | 36410     | 3.17x               |
+
+Table 3.2: Stride Access Performance
+| Stride Size | Time (μs) | Ratio vs Stride 1 |
+| ----------- | --------- | ----------------- |
+| 1           | 10628     | 1.00x             |
+| 2           | 7092      | 0.67x             |
+| 4           | 2727      | 0.26x             |
+| 8           | 1417      | 0.13x             |
+| 16          | 804       | 0.08x             |
+
+
+คำถามวิเคราะห์
+1.Cache Efficiency: ทำไม sequential access เร็วกว่า random access?
+    เพราะ cache และ prefetcher ทำงานได้ดีเมื่อข้อมูลถูกอ่านแบบต่อเนื่อง (sequential)
+    CPU สามารถโหลดข้อมูลล่วงหน้าทีละ block (เช่น 32–64 bytes)
+    ถ้าเป็น random access แต่ละครั้งต้องโหลด block ใหม่ เกิด cache miss บ่อย ช้ากว่า
+
+2.Memory Hierarchy: ความแตกต่างระหว่าง internal SRAM และ external memory คืออะไร?
+    Internal SRAM  เร็ว, อยู่บนชิป, ขนาดเล็ก (~520 KB)
+    External Memory  ช้า, อยู่นอกชิป, ขนาดใหญ่ (MB ระดับ)
+
+3.Stride Patterns: stride size ส่งผลต่อ performance อย่างไร?
+    • Stride = ระยะห่างระหว่างตำแหน่ง memory ที่อ่าน/เขียนในแต่ละรอบ
+    • Stride เล็ก (เช่น 1, 2, 4 bytes) → เข้ากับ cache line → cache hit สูง → เร็ว
+    • Stride ใหญ่ (เช่น ข้ามหลาย KB) → ข้าม cache line บ่อย → cache miss เยอะ → ช้า
+    • ถ้า stride ใหญ่กว่าขนาด cache line (เช่น >64 bytes) → performance ตกลงอย่างชัดเจน
+
+ผลการทดลองที่ 3
+
+ผลลัพธ์การรัน
+
+ESP32 Dual-Core Architecture Analysis
+=====================================
+Creating tasks...
+Core 0 Task Started (PRO_CPU)
+Core 0: Sent message 0
+Tasks created successfully. Monitoring dual-core performance...
+
+Core 1 Task Started (APP_CPU)
+Core 1: Received 'Hello from Core 0 #0' (latency: 14804 μs)
+Core 0: Sent message 10
+Core 1: Received 'Hello from Core 0 #10' (latency: 2424 μs)
+Core 0: Sent message 20
+
+=== Performance Monitor (Second 1) ===
+Core 0 iterations: 21 (avg: 171 μs)
+Core 1 iterations: 25 (avg: 9938 μs)
+Queue messages waiting: 1
+Free heap: 292604 bytes
+Core 1: Received 'Hello from Core 0 #20' (latency: 13057 μs)
+Core 0: Sent message 30
+Core 1: Received 'Hello from Core 0 #30' (latency: 23056 μs)
+Core 0: Sent message 40
+
+=== Performance Monitor (Second 2) ===
+Core 0 iterations: 41 (avg: 111 μs)
+Core 1 iterations: 50 (avg: 9626 μs)
+Queue messages waiting: 1
+Free heap: 292604 bytes
+Core 1: Received 'Hello from Core 0 #40' (latency: 2479 μs)
+Core 0: Sent message 50
+Core 1: Received 'Hello from Core 0 #50' (latency: 13042 μs)
+Core 0: Sent message 60
+
+=== Performance Monitor (Second 3) ===
+Core 0 iterations: 61 (avg: 90 μs)
+Core 1 iterations: 76 (avg: 9649 μs)
+Queue messages waiting: 1
+Free heap: 292604 bytes
+Core 1: Received 'Hello from Core 0 #60' (latency: 23063 μs)
+Core 0: Sent message 70
+Core 1: Received 'Hello from Core 0 #70' (latency: 2404 μs)
+Core 0: Sent message 80
+
+=== Performance Monitor (Second 4) ===
+Core 0 iterations: 81 (avg: 76 μs)
+Core 1 iterations: 101 (avg: 9649 μs)
+Queue messages waiting: 1
+Free heap: 292604 bytes
+Core 1: Received 'Hello from Core 0 #80' (latency: 13014 μs)
+Core 0: Sent message 90
+Core 1: Received 'Hello from Core 0 #90' (latency: 23179 μs)
+Core 0 Task Completed in 4994 ms
+
+=== Performance Monitor (Second 5) ===
+Core 0 iterations: 100 (avg: 67 μs)
+Core 1 iterations: 126 (avg: 9581 μs)
+Queue messages waiting: 0
+Free heap: 292604 bytes
+Core 1 Task Completed in 5942 ms
+
+=== Performance Monitor (Second 6) ===
+Core 0 iterations: 100 (avg: 67 μs)
+Core 1 iterations: 150 (avg: 9653 μs)
+Queue messages waiting: 0
+Free heap: 301516 bytes
+
+=== Performance Monitor (Second 7) ===
+Core 0 iterations: 100 (avg: 67 μs)
+Core 1 iterations: 150 (avg: 9653 μs)
+Queue messages waiting: 0
+Free heap: 301516 bytes
+
+=== Performance Monitor (Second 8) ===
+Core 0 iterations: 100 (avg: 67 μs)
+Core 1 iterations: 150 (avg: 9653 μs)
+Queue messages waiting: 0
+Free heap: 301516 bytes
+
+=== Performance Monitor (Second 9) ===
+Core 0 iterations: 100 (avg: 67 μs)
+Core 1 iterations: 150 (avg: 9653 μs)
+Queue messages waiting: 0
+Free heap: 301516 bytes
+
+=== Performance Monitor (Second 10) ===
+Core 0 iterations: 100 (avg: 67 μs)
+Core 1 iterations: 150 (avg: 9653 μs)
+Queue messages waiting: 0
+Free heap: 301516 bytes
+
+=== Final Results ===
+Core 0 total iterations: 100
+Core 1 total iterations: 150
+Core 0 average time per iteration: 67 μs
+Core 1 average time per iteration: 9653 μs
+
+Dual-core analysis complete!
+
+
+Table 4.2: Core Performance Summary
+| Metric                              | Core 0 (PRO\_CPU) | Core 1 (APP\_CPU) |
+| ----------------------------------- | ----------------- | ----------------- |
+| **Total Iterations**                | 100               | 150               |
+| **Average Time per Iteration (μs)** | 64                | 9647              |
+| **Total Execution Time (ms)**       | 5002              | 5942              |
+| **Task Completion Rate**            | 100%              | 100%              |
+
+Table 4.3: Inter-Core Communication
+| Metric                   | Value                                                                                              |
+| ------------------------ | -------------------------------------------------------------------------------------------------- |
+| **Messages Sent**        | 10 messages sent every \~0.5 sec until #90 → total **10 × 10 = 100**                               |
+| **Messages Received**    | 100                                                                                                |
+| **Average Latency (μs)** | (10049 + 24661 + 3945 + 14537 + 24628 + 3978 + 14631 + 24640 + 3998 + 14678) / 10 = **14474.5 μs** |
+| **Queue Overflow Count** | 0                                                                                                  |
+
+
+คำถามวิเคราะห์
+1.Core Specialization: จากผลการทดลอง core ไหนเหมาะกับงานประเภทใด?
+    Core 0 เหมาะกับงานที่ต้องจัดการระบบ, รับส่งข้อมูล, งานที่เน้นความเสถียร
+    Core 1 เหมาะกับงานประมวลผลหนัก, งานคำนวณ หรือ task ที่ไม่กระทบระบบโดยตรง
+
+2.Communication Overhead: inter-core communication มี overhead เท่าไร?
+    การส่งข้อมูลระหว่าง cores มี delay เล็กน้อย (microseconds ขึ้นอยู่กับวิธีส่ง เช่น queue, shared memory)
+    Overhead ไม่สูงมาก แต่ถ้าส่งบ่อยหรือข้อมูลใหญ่จะกระทบ performance
+
+3.Load Balancing: การกระจายงานระหว่าง cores มีประสิทธิภาพหรือไม่?
+    การกระจายงานระหว่าง cores ช่วยเพิ่มประสิทธิภาพถ้าทำดี
+    แต่ถ้ากระจายไม่สมดุล หรือมีการรอคอยข้อมูล (synchronization) จะทำให้ performance ลดลง
+
+
+คำถามทบทวน
+1.Memory Types: SRAM และ Flash Memory ใช้เก็บข้อมูลประเภทไหน?
+    SRAM เก็บตัวแปรที่เปลี่ยนได้ (stack, global, heap) หายเมื่อปิดเครื่อง
+    Flash เก็บโปรแกรม, ข้อมูลคงที่, filesystem ไม่หายเมื่อปิดเครื่อง
+
+2.Address Ranges: ตัวแปรแต่ละประเภทอยู่ใน address range ไหน?
+    Flash: 0x3F40xxxx → ข้อมูลคงที่ / โค้ด
+    SRAM: 0x3FFBxxxx → global, heap, stack
+    RTC SRAM: 0x5000xxxx → อยู่ได้แม้ deep sleep
+    
+3.Memory Usage: ESP32 มี memory ทั้งหมดเท่าไร และใช้ไปเท่าไร?
+    SRAM: ~520 KB (ใช้ได้จริง ~300 KB)
+    Flash: ทั่วไป 4 MB (บางรุ่นมากกว่า)
